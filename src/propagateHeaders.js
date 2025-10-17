@@ -75,26 +75,60 @@ function propagateHeaders(rows, options = {}) {
 }
 
 function defaultHeaderDetector(cell, valueCell) {
-  if (typeof cell !== 'string') {
+  const normalizedCell = normalizeCell(cell);
+  if (!normalizedCell) {
     return null;
   }
 
-  const colonIndex = cell.indexOf(':');
+  const colonIndex = normalizedCell.indexOf(':');
   if (colonIndex === -1) {
     return null;
   }
 
-  const hasValue = valueCell !== undefined && valueCell !== null && valueCell !== '';
+  const hasValue = hasMeaningfulValue(valueCell);
   if (hasValue) {
     return null;
   }
 
-  const key = cell.slice(0, colonIndex).trim();
+  const key = normalizedCell.slice(0, colonIndex).trim();
   if (!key) {
     return null;
   }
 
-  return { key, value: cell };
+  return { key, value: normalizedCell };
+}
+
+function normalizeCell(cell) {
+  if (cell === null || cell === undefined) {
+    return '';
+  }
+
+  if (typeof cell === 'string') {
+    return cell;
+  }
+
+  if (typeof cell === 'number' || typeof cell === 'boolean') {
+    return String(cell);
+  }
+
+  if (typeof cell === 'object' && typeof cell.toString === 'function') {
+    const text = cell.toString();
+    return typeof text === 'string' ? text : '';
+  }
+
+  return '';
+}
+
+function hasMeaningfulValue(value) {
+  if (value === null || value === undefined) {
+    return false;
+  }
+
+  if (typeof value === 'string') {
+    return value.trim() !== '';
+  }
+
+  return true;
 }
 
 module.exports = { propagateHeaders, defaultHeaderDetector };
